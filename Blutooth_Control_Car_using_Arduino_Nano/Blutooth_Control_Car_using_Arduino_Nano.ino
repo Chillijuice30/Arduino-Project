@@ -1,0 +1,143 @@
+// Motor Driver Pins
+#define in1 3
+#define in2 5
+#define in3 6
+#define in4 11
+
+int Speed = 204; // Speed range: 0 - 255
+int Speedsec;
+int Turnradius = 0; // Radius of turn, 0 - 255
+int brakeTime = 45; // Braking time
+int brkonoff = 1; // 1 for electronic braking system, 0 for normal
+
+int command; // Store received command
+int buttonState = 0;
+int lastButtonState = 0;
+
+void setup() {
+  // Pin mode setup
+  pinMode(in1, OUTPUT);
+  pinMode(in2, OUTPUT);
+  pinMode(in3, OUTPUT);
+  pinMode(in4, OUTPUT);
+
+  Serial.begin(9600); // Set baud rate for Serial communication
+}
+
+void loop() {
+  if (Serial.available() > 0) {
+    command = Serial.read(); // Read command from Serial
+
+    // Initialize with motors stopped
+    Stop();
+
+    // Perform action based on command received
+    switch (command) {
+      case 'F':
+        forward();
+        break;
+      case 'B':
+        back();
+        break;
+      case 'L':
+        left();
+        break;
+      case 'R':
+        right();
+        break;
+      case 'G':
+        forwardleft();
+        break;
+      case 'I':
+        forwardright();
+        break;
+      case 'H':
+        backleft();
+        break;
+      case 'J':
+        backright();
+        break;
+      case '0'...'9':
+        Speed = map(command, '0', '9', 100, 255); // Map command to speed value
+        break;
+      case 'q':
+        Speed = 255;
+        break;
+    }
+
+    Speedsec = Turnradius;
+
+    // Electronic braking system control
+    if (brkonoff == 1) {
+      brakeOn();
+    } else {
+      brakeOff();
+    }
+  }
+}
+
+void left() {
+  analogWrite(in1, Speed);
+  analogWrite(in3, Speed);
+}
+
+void right() {
+  analogWrite(in2, Speed);
+  analogWrite(in4, Speed);
+}
+
+void forward() {
+  analogWrite(in3, Speed);
+  analogWrite(in2, Speed);
+}
+
+void back() {
+  analogWrite(in4, Speed);
+  analogWrite(in1, Speed);
+}
+
+void forwardleft() {
+  analogWrite(in1, Speedsec);
+  analogWrite(in3, Speed);
+}
+
+void backright() {
+  analogWrite(in1, Speed);
+  analogWrite(in3, Speedsec);
+}
+
+void forwardright() {
+  analogWrite(in2, Speed);
+  analogWrite(in4, Speedsec);
+}
+
+void backleft() {
+  analogWrite(in2, Speedsec);
+  analogWrite(in4, Speed);
+}
+
+void Stop() {
+  analogWrite(in1, 0);
+  analogWrite(in2, 0);
+  analogWrite(in3, 0);
+  analogWrite(in4, 0);
+}
+
+void brakeOn() {
+  buttonState = command;
+
+  if (buttonState != lastButtonState) {
+    if (buttonState == 'S') {
+      if (lastButtonState != buttonState) {
+        Stop();
+        delay(brakeTime);
+        Stop();
+      }
+    }
+    lastButtonState = buttonState;
+  }
+}
+
+void brakeOff() {
+  // Placeholder for future use
+}
